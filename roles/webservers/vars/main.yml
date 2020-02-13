@@ -1,0 +1,4 @@
+---
+# vars file for roles/webservers
+path_to_app: "/var/www/html"
+cloudwatch_url: "https://s3.eu-west-1.amazonaws.com/amazoncloudwatch-agent-eu-west-1/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm"

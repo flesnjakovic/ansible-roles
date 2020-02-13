@@ -1,0 +1,48 @@
+---
+# tasks file for roles/webservers
+- name: Upload application file
+  copy:
+    src: ../files/index.php
+    dest: "{{ path_to_app }}"
+    mode: 0755
+
+- name: Create simple info page
+  copy:
+    dest: "{{ path_to_app }}/info.php"
+    content: "<h1> Info about our server {{ ansible_hostname }}. These are changes </h1>"
+
+- name: Configure php.ini file
+  lineinfile:
+    path: /etc/php.ini
+    regexp: ^short_open_tag
+    line: 'short_open_tag=On'
+  notify: restart apache
+
+- name: Download CloudWatch agent
+  get_url:
+    url: "{{ cloudwatch_url }}"
+    dest: "/home/ec2-user"
+    mode: "0755"
+
+- name: Install CloudWatch agent
+  yum:
+    name: /home/ec2-user/amazon-cloudwatch-agent.rpm
+    state: present
+
+- name: Copy Cloudwatch agent config
+  copy:
+    src: ../files/amazon-cloudwatch-agent.json
+    dest: /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
+
+- name: Restart cloudwatch agent
+  become: true
+  command: /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s
+
+- name: Check status
+  become: true
+  command: "/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -m ec2 -a status"
+  register: result
+
+- name: print status
+  debug:
+    var: result
